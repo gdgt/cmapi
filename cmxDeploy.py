@@ -55,7 +55,8 @@ def init_cluster():
                                                  "http://archive.cloudera.com/sqoop-connectors/parcels/latest/,"
                                                  "http://archive.cloudera.com/accumulo-c5/parcels/latest,"
                                                  "%s" % ",".join([url for url in repo_url if url]),
-                      "PHONE_HOME": False, "PARCEL_DISTRIBUTE_RATE_LIMIT_KBS_PER_SECOND": "102400"})
+                      "PHONE_HOME": False, "PARCEL_DISTRIBUTE_RATE_LIMIT_KBS_PER_SECOND": "102400",
+                      "SESSION_TIMEOUT": "99999999999999"})
 
     if cmx.cluster_name in [x.name for x in api.get_all_clusters()]:
         print "Cluster name: '%s' already exists" % cmx.cluster_name
