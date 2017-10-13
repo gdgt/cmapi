@@ -27,6 +27,8 @@ def init_cluster():
     api = ApiResource(server_host=cmx.cm_server, username=cmx.username, password=cmx.password, version=cmx.api_version)
     # Update Cloudera Manager configuration
     cm = api.get_cloudera_manager()
+    # Enable cgroup
+    cm.update_all_hosts_config({"rm_enabled": "true"})
 
     def manifest_to_dict(manifest_json):
         if manifest_json:
