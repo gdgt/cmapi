@@ -1851,14 +1851,14 @@ def main():
 
     # Skip MGMT role installation if amon_password and rman_password password are False
     mgmt_roles = ['SERVICEMONITOR', 'ALERTPUBLISHER', 'EVENTSERVER', 'HOSTMONITOR']
-    if cmx.amon_password and cmx.rman_password:
+    if cmx.rman_password:
         if manager.licensed():
             mgmt_roles.append('REPORTSMANAGER')
-        manager(*mgmt_roles).setup()
-        # "STOP" Management roles
-        # manager(*mgmt_roles).stop()
-        # "START" Management roles
-        manager(*mgmt_roles).start()
+    manager(*mgmt_roles).setup()
+    # "STOP" Management roles
+    # manager(*mgmt_roles).stop()
+    # "START" Management roles
+    manager(*mgmt_roles).start()
 
     # Upload license
     if cmx.license_file:
