@@ -125,7 +125,6 @@ def host_rack():
 
 
 def _check_parcel_stage(parcel_item, expected_stage, action_description):
-    # def wait_for_parcel_stage(cluster, parcel, wanted_stages, action_description):
     api = ApiResource(server_host=cmx.cm_server, username=cmx.username, password=cmx.password, version=cmx.api_version)
     cluster = api.get_cluster(cmx.cluster_name)
 
