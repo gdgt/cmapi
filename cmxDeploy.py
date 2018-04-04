@@ -174,7 +174,7 @@ def setup_zookeeper():
         service.update_config({"zookeeper_datadir_autocreate": False})
 
         # Role Config Group equivalent to Service Default Group
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "SERVER":
                 rcg.update_config({"maxClientCnxns": "1024", "zookeeper_server_java_heapsize": "492830720"})
                 # Pick 3 hosts and deploy Zookeeper Server role
@@ -212,7 +212,7 @@ def setup_hdfs():
         service.update_config(service_config)
 
         # Role Config Group equivalent to Service Default Group
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "NAMENODE":
                 # hdfs-NAMENODE - Default Group
                 rcg.update_config({"dfs_name_dir_list": "/data/dfs/nn",
@@ -288,7 +288,7 @@ def setup_hbase():
         service.update_config(service_config)
 
         # Role Config Group equivalent to Service Default Group
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "MASTER":
                 rcg.update_config({"hbase_master_java_heapsize": "492830720"})
             if rcg.roleType == "REGIONSERVER":
@@ -337,7 +337,7 @@ def setup_solr():
         service.update_config(cdh.dependencies_for(service))
 
         # Role Config Group equivalent to Service Default Group
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "SOLR_SERVER":
                 cdh.create_service_role(service, rcg.roleType, [x for x in hosts if x.id == 0][0])
             if rcg.roleType == "GATEWAY":
@@ -450,7 +450,7 @@ def setup_spark_on_yarn():
 
         # Service-Wide
         service.update_config(cdh.dependencies_for(service))
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "SPARK_YARN_HISTORY_SERVER":
                 rcg.update_config({"history_server_max_heapsize": "153092096"})
 
@@ -495,7 +495,7 @@ def setup_yarn():
         # Service-Wide
         service.update_config(cdh.dependencies_for(service))
 
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "RESOURCEMANAGER":
                 # yarn-RESOURCEMANAGER - Default Group
                 rcg.update_config({"resource_manager_java_heapsize": "492830720",
@@ -551,7 +551,7 @@ def setup_mapreduce():
         # Service-Wide
         service.update_config(cdh.dependencies_for(service))
 
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "JOBTRACKER":
                 # mapreduce-JOBTRACKER - Default Group
                 rcg.update_config({"jobtracker_mapred_local_dir_list": "/data/mapred/jt",
@@ -612,7 +612,7 @@ def setup_hive():
         service.update_config(service_config)
 
         # Role Config Group equivalent to Service Default Group
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "HIVEMETASTORE":
                 rcg.update_config({"hive_metastore_java_heapsize": "492830720"})
             if rcg.roleType == "HIVESERVER2":
@@ -657,7 +657,7 @@ def setup_sqoop():
         service.update_config(cdh.dependencies_for(service))
 
         # Role Config Group equivalent to Service Default Group
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "SQOOP_SERVER":
                 rcg.update_config({"sqoop_java_heapsize": "492830720"})
 
@@ -721,7 +721,7 @@ def setup_impala(enable_llama=False):
         service.update_config(cdh.dependencies_for(service))
 
         # Role Config Group equivalent to Service Default Group
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "IMPALAD":
                 rcg.update_config({"impalad_memory_limit": "618659840",
                                    "enable_audit_event_log": True,
@@ -777,7 +777,7 @@ def setup_oozie():
         service.update_config(cdh.dependencies_for(service))
 
         # Role Config Group equivalent to Service Default Group
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "OOZIE_SERVER":
                 rcg.update_config({"oozie_java_heapsize": "492830720"})
                 cdh.create_service_role(service, rcg.roleType, [x for x in hosts if x.id == 0][0])
@@ -837,7 +837,7 @@ def setup_hue():
         service.update_config(cdh.dependencies_for(service))
 
         # Role Config Group equivalent to Service Default Group
-        for rcg in [x for x in service.get_all_role_config_groups()]:
+        for rcg in service.get_all_role_config_groups():
             if rcg.roleType == "HUE_SERVER":
                 rcg.update_config({})
                 cdh.create_service_role(service, "HUE_SERVER", [x for x in hosts if x.id == 0][0])
