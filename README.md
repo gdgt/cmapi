@@ -11,8 +11,7 @@ You have a running Cloudera Manager Server. You can use the preferred option as 
 #### TL;DR: copy-and-paste below example in RHEL/CentOS
 ``` bash
 curl -L https://raw.githubusercontent.com/gdgt/cmapi/master/bootstrap-cm.sh | bash
-yum install -y git python-setuptools
-easy_install pip
+yum install -y git python-pip python-setuptools
 git clone https://github.com/cloudera/cm_api.git -b cm5-5.15.0 $HOME/cm_api && pip install $HOME/cm_api/python
 curl -L https://raw.githubusercontent.com/gdgt/cmapi/master/cmxDeploy.py -o $HOME/cmxDeploy.py && chmod +x $HOME/cmxDeploy.py
 python $HOME/cmxDeploy.py -u "root" -p "cloudera" -m "$(hostname -f)" -w "$(hostname -f)"
