@@ -121,7 +121,7 @@ def remove_all(api_client, cluster_name):
     for service in cm_client.ServicesResourceApi(api_client).read_services(cluster_name=cluster_name).items:
         cm_client.ServicesResourceApi(api_client).delete_service(cluster_name, service.name)
 
-    cm_client.ClustersResourceApi(api_client).delete_cluster(cluster_name='Cluster 1')
+    cm_client.ClustersResourceApi(api_client).delete_cluster(cluster_name=cluster_name)
     cm_client.MgmtServiceResourceApi(api_client).delete_cms()
 
 
