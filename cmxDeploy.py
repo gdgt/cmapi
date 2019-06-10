@@ -61,7 +61,9 @@ def remove_all(api_client, cluster_name):
 @click.option('--cmhost', help='*Set Cloudera Manager Server Host. ')
 @click.option('--cdhversion', '-i', help='*Set CDH version.')
 @click.option('--teardown', '-d', is_flag=True, help='Teardown')
-def main(cmhost, hosts, cdhversion, teardown):
+@click.option('--username', '-u', default='root', help='SSH username')
+@click.option('--password', '-p', default='cloudera', help='SSH password')
+def main(username, password, cmhost, hosts, cdhversion, teardown):
     cluster_name = 'Cluster 1'
     # parse options: check if --cmhost and --hosts can be resolved.
     if not hostname_resolves(cmhost.strip()):
@@ -98,7 +100,7 @@ def main(cmhost, hosts, cdhversion, teardown):
 
     if not teardown:
         # Class responsible for setting up the cluster.
-        cmx = CmxApi(api_client, cluster_name, cm_host, host_list)
+        cmx = CmxApi(api_client, username, password, cluster_name, cm_host, host_list)
 
         # pre-init
         cmx.create_cluster()
@@ -124,8 +126,10 @@ def main(cmhost, hosts, cdhversion, teardown):
 
 
 class CmxApi:
-    def __init__(self, api_client, cluster_name, cm_host, host_list):
+    def __init__(self, api_client, username, password, cluster_name, cm_host, host_list):
         self.api_client = api_client
+        self.username = username
+        self.password = password
         self.cluster_name = cluster_name
         self.cm_host = cm_host
         self.host_list = host_list
@@ -312,8 +316,8 @@ class CmxApi:
 
             # Perform installation on a set of hosts.
             api_response = cm_instance.host_install_command(
-                body=cm_client.ApiHostInstallArguments(host_names=host_list, user_name='root',
-                                                       password='cloudera', unlimited_jce=True))
+                body=cm_client.ApiHostInstallArguments(host_names=host_list, user_name=self.username,
+                                                       password=self.password, unlimited_jce=True))
             self.wait(api_response)
         except ApiException as e:
             print("Exception %s\n" % e)
