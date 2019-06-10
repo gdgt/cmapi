@@ -16,45 +16,6 @@ from HTMLParser import HTMLParser
 from itertools import chain
 
 
-def manifest_to_dict(manifest_json):
-    if manifest_json:
-        dir_list = json.load(
-            urllib2.urlopen(manifest_json))['parcels'][0]['parcelName']
-        parcel_part = re.match(r"^(.*?)-(.*)-(.*?)$", dir_list).groups()
-        return {'product': str(parcel_part[0]).upper(), 'version': str(parcel_part[1]).lower()}
-    else:
-        raise Exception("Invalid manifest.json")
-
-
-def hostname_resolves(hostname):
-    """
-    Check if hostname resolves
-    :param hostname:
-    :return:
-    """
-    try:
-        if socket.gethostbyname(hostname) == '0.0.0.0':
-            print "Error [{'host': '%s', 'fqdn': '%s'}]" % \
-                  (socket.gethostbyname(hostname), socket.getfqdn(hostname))
-            return False
-        else:
-            print "Success [{'host': '%s', 'fqdn': '%s'}]" % \
-                  (socket.gethostbyname(hostname), socket.getfqdn(hostname))
-            return True
-    except socket.error:
-        print "Error 'host': '%s'" % hostname
-        return False
-
-
-def remove_all(api_client, cluster_name):
-    print "Teardown..."
-    for service in cm_client.ServicesResourceApi(api_client).read_services(cluster_name=cluster_name).items:
-        cm_client.ServicesResourceApi(api_client).delete_service(cluster_name, service.name)
-
-    cm_client.ClustersResourceApi(api_client).delete_cluster(cluster_name='Cluster 1')
-    cm_client.MgmtServiceResourceApi(api_client).delete_cms()
-
-
 @click.command()
 @click.option('--hosts', help='*Set target node(s) list, separate with comma '
                               ' eg: --hosts host1,host2,...,host(n).')
@@ -123,6 +84,45 @@ def main(username, password, cmhost, hosts, cdhversion, teardown):
         cmx.setup_mgmt()
     else:
         remove_all(api_client, cluster_name)
+
+
+def manifest_to_dict(manifest_json):
+    if manifest_json:
+        dir_list = json.load(
+            urllib2.urlopen(manifest_json))['parcels'][0]['parcelName']
+        parcel_part = re.match(r"^(.*?)-(.*)-(.*?)$", dir_list).groups()
+        return {'product': str(parcel_part[0]).upper(), 'version': str(parcel_part[1]).lower()}
+    else:
+        raise Exception("Invalid manifest.json")
+
+
+def hostname_resolves(hostname):
+    """
+    Check if hostname resolves
+    :param hostname:
+    :return:
+    """
+    try:
+        if socket.gethostbyname(hostname) == '0.0.0.0':
+            print "Error [{'host': '%s', 'fqdn': '%s'}]" % \
+                  (socket.gethostbyname(hostname), socket.getfqdn(hostname))
+            return False
+        else:
+            print "Success [{'host': '%s', 'fqdn': '%s'}]" % \
+                  (socket.gethostbyname(hostname), socket.getfqdn(hostname))
+            return True
+    except socket.error:
+        print "Error 'host': '%s'" % hostname
+        return False
+
+
+def remove_all(api_client, cluster_name):
+    print "Teardown..."
+    for service in cm_client.ServicesResourceApi(api_client).read_services(cluster_name=cluster_name).items:
+        cm_client.ServicesResourceApi(api_client).delete_service(cluster_name, service.name)
+
+    cm_client.ClustersResourceApi(api_client).delete_cluster(cluster_name='Cluster 1')
+    cm_client.MgmtServiceResourceApi(api_client).delete_cms()
 
 
 class CmxApi:
