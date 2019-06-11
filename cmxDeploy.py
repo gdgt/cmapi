@@ -67,7 +67,9 @@ def main(username, password, cmhost, hosts, cdhversion, teardown):
         cmx.create_cluster()
         cmx.install_host(host_list=host_list)
         cmx.add_host_to_cluster(host_list=host_list)
+        # CDH6
         cmx.parcel(product=cdh_parcel['product'], version=cdh_parcel['version'])
+
         # setup services
         cmx.setup_zookeeper()
         cmx.setup_hdfs()
@@ -77,6 +79,8 @@ def main(username, password, cmhost, hosts, cdhversion, teardown):
         cmx.setup_impala()
         cmx.setup_oozie()
         cmx.setup_hue()
+        # cmx.setup_kudu()
+        # cmx.setup_spark_on_yarn()
         # execute first run
         cmx.cluster_first_run()
 
@@ -700,7 +704,6 @@ class CmxApi:
                     # Create new roles in a given service.
                     role = self.create_roles(service_name=service_name, role_type=rcg.role_type,
                                              hostname=random.choice(self.host_list))
-
                 if rcg.role_type == 'HIVESERVER2':
                     rcg_instance.update_config(
                         self.cluster_name, rcg.name, service_name, message=None,
@@ -713,6 +716,12 @@ class CmxApi:
                     # Create new roles in a given service.
                     role = self.create_roles(service_name=service_name, role_type=rcg.role_type,
                                              hostname=random.choice(self.host_list))
+                if rcg.role_type == 'GATEWAY':
+                    # Create new roles in a given service.
+                    for hostname in self.host_list:
+                        role = self.create_roles(service_name=service_name, role_type=rcg.role_type,
+                                                 hostname=hostname)
+
         except ApiException as e:
             print("Exception: %s\n" % e)
 
@@ -838,6 +847,93 @@ class CmxApi:
                     role = self.create_roles(service_name=service_name, role_type=rcg.role_type,
                                              hostname=random.choice(self.host_list))
 
+        except ApiException as e:
+            print("Exception: %s\n" % e)
+
+    def setup_kudu(self):
+        service_name = 'kudu'
+        service_type = 'KUDU'.upper()
+
+        services_instance = cm_client.ServicesResourceApi(self.api_client)
+        rcg_instance = cm_client.RoleConfigGroupsResourceApi(self.api_client)
+
+        try:
+            # Creates a list of services.
+            print "Create a %s service and its associated roles." % service_name
+            services_instance.create_services(self.cluster_name,
+                                              body=cm_client.ApiServiceList(
+                                                  [{'name': service_name,
+                                                    'type': service_type}])
+                                              )
+            # Update hue service dependency
+            services_instance.update_service_config(self.cluster_name, service_name, message=None,
+                                                    body=cm_client.ApiServiceConfig(
+                                                        self.dependencies_for(service_name=service_name))
+                                                    )
+            # Updates the config for the given role config group.
+            api_response = rcg_instance.read_role_config_groups(self.cluster_name, service_name)
+            for rcg in api_response.items:
+                if rcg.role_type == 'KUDU_MASTER':
+                    rcg_instance.update_config(
+                        self.cluster_name, rcg.name, service_name, message=None,
+                        body=cm_client.ApiConfigList([{'name': 'fs_data_dirs', 'value': '/var/lib/kudu/master'},
+                                                      {'name': 'fs_wal_dir', 'value': '/var/lib/kudu/master'},
+                                                      ])
+                    )
+                    role = self.create_roles(service_name=service_name, role_type=rcg.role_type,
+                                             hostname=random.choice(self.host_list))
+                if rcg.role_type == 'KUDU_TSERVER':
+                    rcg_instance.update_config(
+                        self.cluster_name, rcg.name, service_name, message=None,
+                        body=cm_client.ApiConfigList([{'name': 'fs_data_dirs', 'value': '/var/lib/kudu/tserver'},
+                                                      {'name': 'fs_wal_dir', 'value': '/var/lib/kudu/tserver'},
+                                                      ])
+                    )
+                    # Create new roles in a given service.
+                    for hostname in self.host_list:
+                        role = self.create_roles(service_name=service_name, role_type=rcg.role_type,
+                                                 hostname=hostname)
+
+        except ApiException as e:
+            print("Exception: %s\n" % e)
+
+    def setup_spark_on_yarn(self):
+        service_name = 'spark_on_yarn'
+        service_type = 'SPARK_ON_YARN'.upper()
+
+        services_instance = cm_client.ServicesResourceApi(self.api_client)
+        rcg_instance = cm_client.RoleConfigGroupsResourceApi(self.api_client)
+
+        try:
+            # Creates a list of services.
+            print "Create a %s service and its associated roles." % service_name
+            services_instance.create_services(self.cluster_name,
+                                              body=cm_client.ApiServiceList(
+                                                  [{'name': service_name,
+                                                    'type': service_type}])
+                                              )
+            # Update hue service dependency
+            services_instance.update_service_config(self.cluster_name, service_name, message=None,
+                                                    body=cm_client.ApiServiceConfig(
+                                                        self.dependencies_for(service_name=service_name))
+                                                    )
+            # Updates the config for the given role config group.
+            api_response = rcg_instance.read_role_config_groups(self.cluster_name, service_name)
+            for rcg in api_response.items:
+                if rcg.role_type == 'SPARK_YARN_HISTORY_SERVER':
+                    rcg_instance.update_config(
+                        self.cluster_name, rcg.name, service_name, message=None,
+                        body=cm_client.ApiConfigList([{'name': 'history_server_max_heapsize', 'value': '153092096'},
+                                                      ])
+                    )
+                    # Create new roles in a given service.
+                    role = self.create_roles(service_name=service_name, role_type=rcg.role_type,
+                                             hostname=random.choice(self.host_list))
+                if rcg.role_type == 'GATEWAY':
+                    # Create new roles in a given service.
+                    for hostname in self.host_list:
+                        role = self.create_roles(service_name=service_name, role_type=rcg.role_type,
+                                                 hostname=hostname)
 
         except ApiException as e:
             print("Exception: %s\n" % e)
