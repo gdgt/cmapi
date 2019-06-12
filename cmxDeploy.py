@@ -24,8 +24,10 @@ from itertools import chain
 @click.option('--teardown', '-d', is_flag=True, help='Teardown')
 @click.option('--username', '-u', default='root', help='SSH username')
 @click.option('--password', '-p', default='cloudera', help='SSH password')
-def main(username, password, cmhost, hosts, cdhversion, teardown):
-    cluster_name = 'Cluster 1'
+@click.option('--clustername', '-n', default='Cluster 1', help='Enclose in quote if there '
+                                                               'is a space character, e.g.: "Cluster 1"')
+def main(clustername, username, password, cmhost, hosts, cdhversion, teardown):
+    cluster_name = clustername.strip()
     # parse options: check if --cmhost and --hosts can be resolved.
     if not hostname_resolves(cmhost.strip()):
         exit(1)
@@ -289,7 +291,7 @@ class CmxApi:
 
         services_instance = cm_client.ServicesResourceApi(self.api_client)
         try:
-            service = [x for x in services_instance.read_services('Cluster 1').items if name.upper() == x.type][0]
+            service = [x for x in services_instance.read_services(self.cluster_name).items if name.upper() == x.type][0]
         except IndexError:
             service = None
 
@@ -298,7 +300,7 @@ class CmxApi:
     def create_cluster(self):
         cluster_api_instance = cm_client.ClustersResourceApi(self.api_client)
         # Creates a collection of clusters.
-        print "Creating cluster name: %s" % self.cluster_name
+        print "Creating Cluster Name: [%s]" % self.cluster_name
         try:
             api_response = cluster_api_instance.create_clusters(
                 body=cm_client.ApiClusterList([{'name': self.cluster_name,
@@ -310,6 +312,7 @@ class CmxApi:
     def install_host(self, host_list):
         # Install Host to CM
         cm_instance = cm_client.ClouderaManagerResourceApi(self.api_client)
+        host_instance = cm_client.HostsResourceApi(self.api_client)
         print "Installing Host(s)..."
 
         try:
@@ -318,23 +321,29 @@ class CmxApi:
                  {'name': 'PHONE_HOME', 'value': False}
                  ]))
 
-            # Perform installation on a set of hosts.
-            api_response = cm_instance.host_install_command(
-                body=cm_client.ApiHostInstallArguments(host_names=host_list, user_name=self.username,
-                                                       password=self.password, unlimited_jce=True))
-            self.wait(api_response)
+            for host in host_instance.read_hosts().items:
+                if host.hostname not in host_list:
+                    print "Installing agent on: %s" % host.hostname
+                    # Perform installation on a set of hosts.
+                    api_response = cm_instance.host_install_command(
+                        body=cm_client.ApiHostInstallArguments(host_names=host_list, user_name=self.username,
+                                                               password=self.password, unlimited_jce=True))
+                    self.wait(api_response)
+                else:
+                    print "Agent already installed on: %s" % host.hostname
+
         except ApiException as e:
             print("Exception %s\n" % e)
 
     def add_host_to_cluster(self, host_list):
         # Add host to cluster
         hosts = []
-        api_instance = cm_client.ClustersResourceApi(self.api_client)
+        cluster_instance = cm_client.ClustersResourceApi(self.api_client)
         print "Adding host(s) to Cluster."
         try:
             for host in host_list:
                 hosts.append({'hostname': host, 'hostId': getattr(self.get_host_resource(host), 'host_id', None)})
-            api_response = api_instance.add_hosts(self.cluster_name, body=cm_client.ApiHostRefList(hosts))
+            api_response = cluster_instance.add_hosts(self.cluster_name, body=cm_client.ApiHostRefList(hosts))
         except ApiException as e:
             print("Exception: %s\n" % e)
 
@@ -386,7 +395,7 @@ class CmxApi:
                                    expected_stage=['ACTIVATED'], action_description="Activate Parcel")
             elif 'ACTIVATED' == cluster_parcel.stage:
                 self.parcel_action(product=product, version=version,
-                                   function="deactivate", expected_stage=['DISTRIBUTED'],
+                                   function="deactivate_command", expected_stage=['DISTRIBUTED'],
                                    action_description="Deactivate Parcel")
                 self.parcel_action(product=product, version=version,
                                    function="start_removal_of_distribution", expected_stage=['DOWNLOADED'],
@@ -799,14 +808,15 @@ class CmxApi:
             for rcg in api_response.items:
                 if rcg.role_type == 'OOZIE_SERVER':
                     # oozie_database_host: Assuming embedded DB is running from where embedded-db is located.
+                    service_config = [{'name': 'oozie_database_user', 'value': 'oozie'},
+                                      {'name': 'oozie_database_host', 'value': '%s:%s' % (self.cm_host, "7432")},
+                                      {'name': 'oozie_database_password', 'value': 'cloudera'},
+                                      {'name': 'oozie_database_type', 'value': 'postgresql'},
+                                      {'name': 'oozie_java_heapsize', 'value': '492830720'},]
+
                     rcg_instance.update_config(
                         self.cluster_name, rcg.name, service_name, message=None,
-                        body=cm_client.ApiConfigList([{'name': 'oozie_database_user', 'value': 'oozie'},
-                                                      {'name': 'oozie_database_host', 'value':
-                                                          '%s:%s' % (self.cm_host, "7432")},
-                                                      {'name': 'oozie_database_password', 'value': 'cloudera'},
-                                                      {'name': 'oozie_database_type', 'value': 'postgresql'},
-                                                      {'name': 'oozie_java_heapsize', 'value': '492830720'},])
+                        body=cm_client.ApiConfigList(service_config)
                     )
 
                     # Create new roles in a given service.
@@ -941,8 +951,8 @@ class CmxApi:
     def setup_mgmt(self):
         service_name = 'mgmt'
         service_type = 'MGMT'.upper()
-        hostname = self.cm_host
-        host_id = getattr(self.get_host_resource(self.cm_host), 'host_id', None)
+        hostname = self.host_list[0]
+        host_id = getattr(self.get_host_resource(hostname), 'host_id', None)
 
         services_instance = cm_client.MgmtServiceResourceApi(self.api_client)
         mgmt_role_instance = cm_client.MgmtRolesResourceApi(self.api_client)
@@ -976,13 +986,13 @@ class CmxApi:
                     rcg_instance.update_config(rcg.name, message=None,
                                                body=cm_client.ApiConfigList([
                                                    {'name': 'firehose_non_java_memory_bytes', 'value': '1610612736'},
-                                                   {'name': 'firehose_heapsize', 'value': '268435456'},
+                                                   {'name': 'firehose_heapsize', 'value': '2147483648'},
                                                ]))
                 if rcg.role_type == 'SERVICEMONITOR':
                     rcg_instance.update_config(rcg.name, message=None,
                                                body=cm_client.ApiConfigList([
-                                                   {'name': 'firehose_non_java_memory_bytes', 'value': '1610612736'},
-                                                   {'name': 'firehose_heapsize', 'value': '268435456'},
+                                                   {'name': 'firehose_non_java_memory_bytes', 'value': '12884901888'},
+                                                   {'name': 'firehose_heapsize', 'value': '2147483648'},
                                                ]))
 
             services_instance.start_command()
