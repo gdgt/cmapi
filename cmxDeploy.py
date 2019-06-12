@@ -70,24 +70,24 @@ def main(clustername, username, password, cmhost, hosts, cdhversion, teardown):
         cmx.install_host(host_list=host_list)
         cmx.add_host_to_cluster(host_list=host_list)
         # CDH6
-        # cmx.parcel(product=cdh_parcel['product'], version=cdh_parcel['version'])
+        cmx.parcel(product=cdh_parcel['product'], version=cdh_parcel['version'])
 
-        # # setup services
-        # cmx.setup_zookeeper()
-        # cmx.setup_hdfs()
-        # cmx.setup_hbase()
-        # cmx.setup_yarn()
-        # cmx.setup_hive()
-        # cmx.setup_impala()
-        # cmx.setup_oozie()
-        # cmx.setup_hue()
-        # # cmx.setup_kudu()
-        # # cmx.setup_spark_on_yarn()
-        # # execute first run
-        # cmx.cluster_first_run()
-        #
-        # # setup CMS
-        # cmx.setup_mgmt()
+        # setup services
+        cmx.setup_zookeeper()
+        cmx.setup_hdfs()
+        cmx.setup_hbase()
+        cmx.setup_yarn()
+        cmx.setup_hive()
+        cmx.setup_impala()
+        cmx.setup_oozie()
+        cmx.setup_hue()
+        # cmx.setup_kudu()
+        # cmx.setup_spark_on_yarn()
+        # execute first run
+        cmx.cluster_first_run()
+
+        # setup CMS
+        cmx.setup_mgmt()
     else:
         remove_all(api_client, cluster_name)
 
@@ -322,7 +322,6 @@ class CmxApi:
                  ]))
 
             for hostname in host_list:
-                print "=== %s" % hostname
                 if hostname not in [x.hostname for x in host_instance.read_hosts().items]:
                     print "Installing agent on: %s" % hostname
                     # Perform installation on a set of hosts.
