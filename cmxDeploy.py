@@ -70,24 +70,24 @@ def main(clustername, username, password, cmhost, hosts, cdhversion, teardown):
         cmx.install_host(host_list=host_list)
         cmx.add_host_to_cluster(host_list=host_list)
         # CDH6
-        cmx.parcel(product=cdh_parcel['product'], version=cdh_parcel['version'])
+        # cmx.parcel(product=cdh_parcel['product'], version=cdh_parcel['version'])
 
-        # setup services
-        cmx.setup_zookeeper()
-        cmx.setup_hdfs()
-        cmx.setup_hbase()
-        cmx.setup_yarn()
-        cmx.setup_hive()
-        cmx.setup_impala()
-        cmx.setup_oozie()
-        cmx.setup_hue()
-        # cmx.setup_kudu()
-        # cmx.setup_spark_on_yarn()
-        # execute first run
-        cmx.cluster_first_run()
-
-        # setup CMS
-        cmx.setup_mgmt()
+        # # setup services
+        # cmx.setup_zookeeper()
+        # cmx.setup_hdfs()
+        # cmx.setup_hbase()
+        # cmx.setup_yarn()
+        # cmx.setup_hive()
+        # cmx.setup_impala()
+        # cmx.setup_oozie()
+        # cmx.setup_hue()
+        # # cmx.setup_kudu()
+        # # cmx.setup_spark_on_yarn()
+        # # execute first run
+        # cmx.cluster_first_run()
+        #
+        # # setup CMS
+        # cmx.setup_mgmt()
     else:
         remove_all(api_client, cluster_name)
 
@@ -321,16 +321,17 @@ class CmxApi:
                  {'name': 'PHONE_HOME', 'value': False}
                  ]))
 
-            for host in host_instance.read_hosts().items:
-                if host.hostname not in host_list:
-                    print "Installing agent on: %s" % host.hostname
+            for hostname in host_list:
+                print "=== %s" % hostname
+                if hostname not in [x.hostname for x in host_instance.read_hosts().items]:
+                    print "Installing agent on: %s" % hostname
                     # Perform installation on a set of hosts.
                     api_response = cm_instance.host_install_command(
                         body=cm_client.ApiHostInstallArguments(host_names=host_list, user_name=self.username,
                                                                password=self.password, unlimited_jce=True))
                     self.wait(api_response)
                 else:
-                    print "Agent already installed on: %s" % host.hostname
+                    print "Agent already installed on: %s" % hostname
 
         except ApiException as e:
             print("Exception %s\n" % e)
